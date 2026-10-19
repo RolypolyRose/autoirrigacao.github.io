@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HydroPulse - Autonomous Indoor Garden Irrigation & Treatment</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                            950: '#022c22',
+                        },
+                        darkbg: '#0b0f17',
+                        cardbg: '#111827',
+                        borderbg: '#1f2937'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0b0f17;
+            color: #e5e7eb;
+        }
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glow-emerald {
+            box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+        }
+        .glow-emerald-lg {
+            box-shadow: 0 0 40px -10px rgba(16, 185, 129, 0.4);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-darkbg text-gray-200 antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-brand-600 text-white px-5 py-3 rounded-xl shadow-2xl flex items-center space-x-3 pointer-events-none">
+        <i class="fa-solid fa-circle-check text-xl"></i>
+        <span id="toast-message" class="text-sm font-medium">Command copied to clipboard!</span>
+    </div>
+
+    <!-- Navigation Header -->
+    <header class="sticky top-0 z-40 backdrop-blur-md bg-darkbg/80 border-b border-gray-800/80 transition-all duration-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                        <i class="fa-solid fa-leaf text-xl"></i>
+                    </div>
+                    <div>
+                        <span class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+                            HydroPulse <span class="text-xs font-mono font-normal px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20">v2.4-PRO</span>
+                        </span>
+                        <p class="text-[10px] text-gray-400 -mt-1 hidden sm:block">Autonomous Agritech OS</p>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-300">
+                    <a href="#overview" class="hover:text-brand-400 transition-colors">Overview</a>
+                    <a href="#hardware" class="hover:text-brand-400 transition-colors">Hardware Specs</a>
+                    <a href="#software" class="hover:text-brand-400 transition-colors">Software & Setup</a>
+                    <a href="#simulation" class="hover:text-brand-400 transition-colors">Live Control Suite</a>
+                </nav>
+
+                <!-- Actions / CTA -->
+                <div class="flex items-center space-x-4">
+                    <div class="hidden lg:flex items-center space-x-2 text-xs bg-gray-900 border border-gray-800 rounded-full px-3 py-1.5">
+                        <span class="relative flex h-2 w-2">
+                          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
+                          <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
+                        </span>
+                        <span class="text-gray-300 font-mono">System Status: Online</span>
+                    </div>
+
+                    <a href="#software" class="bg-brand-600 hover:bg-brand-500 text-white font-medium text-sm px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-brand-500/20 flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-xs"></i>
+                        <span>Deploy Firmware</span>
+                    </a>
+
+                    <!-- Mobile menu button -->
+                    <button id="mobile-menu-btn" class="md:hidden text-gray-400 hover:text-white p-2 text-xl focus:outline-none">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-b border-gray-800 px-4 pt-2 pb-4 space-y-3 text-sm">
+            <a href="#overview" class="block text-gray-300 hover:text-brand-400 py-1">Overview</a>
+            <a href="#hardware" class="block text-gray-300 hover:text-brand-400 py-1">Hardware Specs</a>
+            <a href="#software" class="block text-gray-300 hover:text-brand-400 py-1">Software & Setup</a>
+            <a href="#simulation" class="block text-gray-300 hover:text-brand-400 py-1">Live Control Suite</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden pt-12 pb-20 lg:pt-20 lg:pb-28 border-b border-gray-800/50">
+        <!-- Background Radial Gradient -->
+        <div class="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-brand-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="text-center max-w-3xl mx-auto">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-mono mb-6">
+                    <i class="fa-solid fa-microchip"></i>
+                    <span>ESP32-Powered Precision Micro-Dosing & Hydro-Management</span>
+                </div>
+
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                    Autonomous Indoor Garden <span class="bg-gradient-to-r from-brand-400 to-emerald-200 bg-clip-text text-transparent">Irrigation & Treatment</span>
+                </h1>
+
+                <p class="mt-6 text-lg text-gray-400 leading-relaxed">
+                    An open-source hardware and software platform providing automated soil moisture regulation, real-time chemical/nutrient treatment administration, and closed-loop liquid monitoring for home hydroponics and indoor grow systems.
+                </p>
+
+                <div class="mt-8 flex flex-wrap justify-center gap-4">
+                    <a href="#simulation" class="bg-brand-600 hover:bg-brand-500 text-white font-semibold px-6 py-3 rounded-xl transition-all shadow-lg hover:shadow-brand-500/30 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders"></i>
+                        <span>Launch Simulation Control</span>
+                    </a>
+                    <a href="#hardware" class="bg-gray-800 hover:bg-gray-700 text-gray-200 font-semibold px-6 py-3 rounded-xl border border-gray-700 transition-all flex items-center gap-2">
+                        <i class="fa-solid fa-diagram-project"></i>
+                        <span>Explore Hardware Specs</span>
+                    </a>
+                </div>
+
+                <!-- Stats summary -->
+                <div class="mt-14 grid grid-cols-2 md:grid-cols-4 gap-4 p-4 rounded-2xl bg-cardbg/60 border border-gray-800 backdrop-blur-sm">
+                    <div class="p-3">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Irrigation Precision</p>
+                        <p class="text-2xl font-bold text-brand-400 mt-1">± 2.5 ml</p>
+                    </div>
+                    <div class="p-3 border-l border-gray-800">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Max Zones</p>
+                        <p class="text-2xl font-bold text-white mt-1">8 Independent</p>
+                    </div>
+                    <div class="p-3 border-l border-gray-800">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">Telemetry Sampling</p>
+                        <p class="text-2xl font-bold text-brand-400 mt-1">100 ms Cycle</p>
+                    </div>
+                    <div class="p-3 border-l border-gray-800">
+                        <p class="text-xs text-gray-400 uppercase tracking-wider font-semibold">API Compatibility</p>
+                        <p class="text-2xl font-bold text-white mt-1">MQTT / REST</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Overview & Key Features -->
+    <section id="overview" class="py-20 bg-darkbg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <h2 class="text-xs uppercase tracking-widest text-brand-400 font-bold font-mono">Platform Capabilities</h2>
+                <p class="text-3xl font-bold text-white mt-2">Closed-Loop Precision Ecosystem</p>
+                <p class="text-gray-400 mt-3 text-sm">Combining physical fluid mechanics with real-time sensor analytics for effortless botanical health.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Feature 1 -->
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800 hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                    <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mb-5 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-droplet"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Precision Irrigation</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Soil moisture trigger thresholds calculate micro-dosing volume. Prevents root rot through adaptive algorithmic dry-out periods.
+                    </p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800 hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                    <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mb-5 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-flask"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Targeted Treatments</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Automated injection of organic fertilizers, pest preventatives, and pH Up/Down buffers via micro peristaltic pumps.
+                    </p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800 hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                    <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mb-5 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-chart-line"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Telemetry Monitoring</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Continuous continuous data gathering: pH, Electrical Conductivity (EC), volumetric water content, ambient temperature, and humidity.
+                    </p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800 hover:border-brand-500/50 transition-all duration-300 hover:-translate-y-1 group">
+                    <div class="w-12 h-12 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-xl mb-5 group-hover:bg-brand-500 group-hover:text-white transition-colors">
+                        <i class="fa-solid fa-network-wired"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-white mb-2">Multi-Zone Routing</h3>
+                    <p class="text-gray-400 text-sm leading-relaxed">
+                        Solenoid fluid manifold distributes custom liquid mixes to individual containers or growth trays independently.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Physical Hardware Structure Section -->
+    <section id="hardware" class="py-20 bg-gray-950/60 border-t border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <h2 class="text-xs uppercase tracking-widest text-brand-400 font-bold font-mono">Hardware Ecosystem</h2>
+                <p class="text-3xl font-bold text-white mt-2">Physical Architecture Breakdown</p>
+                <p class="text-gray-400 mt-3 text-sm">Industrial-grade components integrated for high durability and fluid management accuracy.</p>
+            </div>
+
+            <!-- Hardware Layout Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                
+                <!-- Interactive Hardware Component Navigator -->
+                <div class="lg:col-span-5 bg-cardbg p-6 rounded-2xl border border-gray-800">
+                    <h3 class="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-cubes text-brand-400"></i> Hardware Components
+                    </h3>
+                    <div class="space-y-2" id="hardware-nav">
+                        <button onclick="selectHardware('esp32')" id="btn-esp32" class="hw-btn w-full text-left p-3.5 rounded-xl border border-brand-500/40 bg-brand-500/10 text-white font-medium flex items-center justify-between transition-all">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-microchip text-brand-400 w-5"></i>
+                                Microcontroller (ESP32 NodeMCU)
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-xs text-brand-400"></i>
+                        </button>
+
+                        <button onclick="selectHardware('peristaltic')" id="btn-peristaltic" class="hw-btn w-full text-left p-3.5 rounded-xl border border-gray-800 hover:border-gray-700 bg-gray-900/50 text-gray-300 font-medium flex items-center justify-between transition-all">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-rotate text-gray-400 w-5"></i>
+                                Peristaltic Dosing Pumps
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+                        </button>
+
+                        <button onclick="selectHardware('manifold')" id="btn-manifold" class="hw-btn w-full text-left p-3.5 rounded-xl border border-gray-800 hover:border-gray-700 bg-gray-900/50 text-gray-300 font-medium flex items-center justify-between transition-all">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-pipe-valve text-gray-400 w-5"></i>
+                                Solenoid Valve Manifold
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+                        </button>
+
+                        <button onclick="selectHardware('sensors')" id="btn-sensors" class="hw-btn w-full text-left p-3.5 rounded-xl border border-gray-800 hover:border-gray-700 bg-gray-900/50 text-gray-300 font-medium flex items-center justify-between transition-all">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-gauge-high text-gray-400 w-5"></i>
+                                Capacitive Moisture & Probes
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+                        </button>
+
+                        <button onclick="selectHardware('reservoir')" id="btn-reservoir" class="hw-btn w-full text-left p-3.5 rounded-xl border border-gray-800 hover:border-gray-700 bg-gray-900/50 text-gray-300 font-medium flex items-center justify-between transition-all">
+                            <span class="flex items-center gap-3">
+                                <i class="fa-solid fa-water-ladder text-gray-400 w-5"></i>
+                                Reservoir Tank & Mixers
+                            </span>
+                            <i class="fa-solid fa-chevron-right text-xs text-gray-500"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Hardware Component Detail Box -->
+                <div class="lg:col-span-7 bg-cardbg p-6 sm:p-8 rounded-2xl border border-gray-800 relative min-h-[420px] flex flex-col justify-between">
+                    <div id="hardware-detail">
+                        <!-- Dynamic Content populated via JavaScript -->
+                    </div>
+
+                    <!-- Schematic Indicator Footer -->
+                    <div class="mt-8 pt-4 border-t border-gray-800/80 flex items-center justify-between text-xs text-gray-500 font-mono">
+                        <span>Schematic ref: HW-EXP-2026-V2</span>
+                        <span class="text-brand-400 flex items-center gap-1">
+                            <i class="fa-solid fa-shield-halved"></i> ESD Safe Isolation
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Hardware Topology Visual Diagram Card -->
+            <div class="mt-12 bg-cardbg rounded-2xl border border-gray-800 p-6 sm:p-8">
+                <h3 class="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-diagram-project text-brand-400"></i> Physical Hardware Connectivity Topology
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-4 text-center font-mono text-xs">
+                    <div class="p-4 rounded-xl bg-gray-900 border border-gray-800 flex flex-col items-center">
+                        <i class="fa-solid fa-vial text-2xl text-emerald-400 mb-2"></i>
+                        <span class="font-bold text-white">1. Fluid Reservoirs</span>
+                        <span class="text-gray-400 text-[11px] mt-1">Water, Nutrients (A/B), pH Control</span>
+                    </div>
+                    <div class="hidden md:flex items-center justify-center text-gray-600">
+                        <i class="fa-solid fa-arrow-right text-lg"></i>
+                    </div>
+                    <div class="p-4 rounded-xl bg-gray-900 border border-gray-800 flex flex-col items-center">
+                        <i class="fa-solid fa-filter text-2xl text-blue-400 mb-2"></i>
+                        <span class="font-bold text-white">2. Dosing & Mixing Tank</span>
+                        <span class="text-gray-400 text-[11px] mt-1">Peristaltic Pumps & Magnetic Stirrer</span>
+                    </div>
+                    <div class="hidden md:flex items-center justify-center text-gray-600">
+                        <i class="fa-solid fa-arrow-right text-lg"></i>
+                    </div>
+                    <div class="p-4 rounded-xl bg-brand-500/10 border border-brand-500/30 flex flex-col items-center">
+                        <i class="fa-solid fa-sitemap text-2xl text-brand-400 mb-2"></i>
+                        <span class="font-bold text-brand-300">3. Solenoid Manifold</span>
+                        <span class="text-gray-400 text-[11px] mt-1">Directing customized mix to Zones 1-4</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Software Installation & Setup Guide Section -->
+    <section id="software" class="py-20 bg-darkbg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <h2 class="text-xs uppercase tracking-widest text-brand-400 font-bold font-mono">Deployment Guide</h2>
+                <p class="text-3xl font-bold text-white mt-2">Software & Firmware Installation</p>
+                <p class="text-gray-400 mt-3 text-sm">Step-by-step instructions to compile firmware and host the Docker orchestration stack.</p>
+            </div>
+
+            <!-- Setup Steps Navigation Tabs -->
+            <div class="flex border-b border-gray-800 mb-8 overflow-x-auto custom-scrollbar">
+                <button onclick="setTab('firmware')" id="tab-firmware" class="tab-btn px-6 py-3 font-semibold text-sm border-b-2 border-brand-500 text-brand-400 whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-microchip"></i> 1. ESP32 Firmware Flash
+                </button>
+                <button onclick="setTab('docker')" id="tab-docker" class="tab-btn px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-white whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-brands fa-docker"></i> 2. Backend Stack (Docker)
+                </button>
+                <button onclick="setTab('env')" id="tab-env" class="tab-btn px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-white whitespace-nowrap flex items-center gap-2">
+                    <i class="fa-solid fa-sliders"></i> 3. Environment Config
+                </button>
+            </div>
+
+            <!-- Tab 1: Firmware -->
+            <div id="content-firmware" class="tab-content space-y-6">
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800">
+                    <h3 class="text-lg font-bold text-white mb-2">Flashing ESP32 Microcontroller via PlatformIO CLI</h3>
+                    <p class="text-gray-400 text-sm mb-4">Ensure your ESP32 board is connected via Micro-USB or USB-C before initiating flashing procedures.</p>
+
+                    <div class="relative bg-gray-950 p-4 rounded-xl border border-gray-800 code-block text-sm text-gray-300">
+                        <button onclick="copyCode('code-firmware')" class="absolute top-3 right-3 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg border border-gray-700 flex items-center gap-1 transition-colors">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                        <pre id="code-firmware"><span class="text-gray-500"># 1. Clone repository</span>
+git clone https://github.com/hydropulse/hydropulse-core.git
+cd hydropulse-core/firmware
+
+<span class="text-gray-500"># 2. Install PlatformIO Core CLI</span>
+pip install platformio
+
+<span class="text-gray-500"># 3. Build firmware project</span>
+pio run --environment esp32dev
+
+<span class="text-gray-500"># 4. Upload firmware to hardware and monitor serial output</span>
+pio run --target upload --target monitor --upload-port /dev/ttyUSB0</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 2: Docker -->
+            <div id="content-docker" class="tab-content hidden space-y-6">
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800">
+                    <h3 class="text-lg font-bold text-white mb-2">Backend Docker Compose Deployment</h3>
+                    <p class="text-gray-400 text-sm mb-4">Launches MQTT broker (Mosquitto), Time-series database (InfluxDB), and Python API engine.</p>
+
+                    <div class="relative bg-gray-950 p-4 rounded-xl border border-gray-800 code-block text-sm text-gray-300">
+                        <button onclick="copyCode('code-docker')" class="absolute top-3 right-3 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg border border-gray-700 flex items-center gap-1 transition-colors">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                        <pre id="code-docker"><span class="text-gray-500"># Launch services in detached mode</span>
+docker-compose -f docker-compose.prod.yml up -d --build
+
+<span class="text-gray-500"># Verify operational container status</span>
+docker-compose ps
+
+<span class="text-gray-500"># View real-time MQTT telemetry log stream</span>
+docker-compose logs -f python-api-backend</pre>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab 3: Environment Configuration -->
+            <div id="content-env" class="tab-content hidden space-y-6">
+                <div class="bg-cardbg p-6 rounded-2xl border border-gray-800">
+                    <h3 class="text-lg font-bold text-white mb-2">Environment Variables (.env)</h3>
+                    <p class="text-gray-400 text-sm mb-4">Create a <code>.env</code> file in the root directory prior to starting the containers.</p>
+
+                    <div class="relative bg-gray-950 p-4 rounded-xl border border-gray-800 code-block text-sm text-gray-300">
+                        <button onclick="copyCode('code-env')" class="absolute top-3 right-3 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 px-2.5 py-1.5 rounded-lg border border-gray-700 flex items-center gap-1 transition-colors">
+                            <i class="fa-regular fa-copy"></i> Copy
+                        </button>
+                        <pre id="code-env"><span class="text-gray-500"># Network & Broker Setup</span>
+MQTT_BROKER_HOST=192.168.1.150
+MQTT_BROKER_PORT=1883
+MQTT_TOPIC_PREFIX=hydropulse/zone1
+
+<span class="text-gray-500"># Target Soil Moisture Thresholds (%)</span>
+MOISTURE_TARGET_MIN=35.0
+MOISTURE_TARGET_MAX=65.0
+
+<span class="text-gray-500"># Fluid Dosing Tolerances</span>
+TARGET_PH_LEVEL=6.2
+TARGET_EC_MILLISIMENS=1.8
+PUMP_SAFETY_TIMEOUT_SECONDS=15</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Architecture & Live Interactive Controls Simulation -->
+    <section id="simulation" class="py-20 bg-gray-950/80 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <h2 class="text-xs uppercase tracking-widest text-brand-400 font-bold font-mono">Interactive Live Suite</h2>
+                <p class="text-3xl font-bold text-white mt-2">Hardware Telemetry & Control Sandbox</p>
+                <p class="text-gray-400 mt-3 text-sm">Simulate live system telemetry, toggle manual solenoids, and trigger automated liquid treatments.</p>
+            </div>
+
+            <!-- Control Console Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                
+                <!-- Telemetry Metrics Panel -->
+                <div class="lg:col-span-7 bg-cardbg p-6 sm:p-8 rounded-2xl border border-gray-800 space-y-6">
+                    <div class="flex items-center justify-between border-b border-gray-800 pb-4">
+                        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-gauge-simple-high text-brand-400"></i> Real-time Sensor Feed
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-brand-500 animate-pulse"></span>
+                            <span class="text-xs text-gray-400 font-mono">Zone 01 Active</span>
+                        </div>
+                    </div>
+
+                    <!-- Gauges & Telemetry Cards -->
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <!-- Soil Moisture -->
+                        <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-center">
+                            <p class="text-xs text-gray-400 font-medium">Soil Moisture</p>
+                            <p id="sim-moisture" class="text-2xl font-extrabold text-brand-400 mt-2 font-mono">42%</p>
+                            <div class="w-full bg-gray-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                <div id="bar-moisture" class="bg-brand-500 h-full transition-all duration-500" style="width: 42%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Soil pH -->
+                        <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-center">
+                            <p class="text-xs text-gray-400 font-medium">pH Balance</p>
+                            <p id="sim-ph" class="text-2xl font-extrabold text-blue-400 mt-2 font-mono">6.2</p>
+                            <div class="w-full bg-gray-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                <div id="bar-ph" class="bg-blue-500 h-full transition-all duration-500" style="width: 62%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Electrical Conductivity -->
+                        <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-center">
+                            <p class="text-xs text-gray-400 font-medium">EC Level</p>
+                            <p id="sim-ec" class="text-2xl font-extrabold text-purple-400 mt-2 font-mono">1.8 <span class="text-[10px] font-normal text-gray-400">mS/cm</span></p>
+                            <div class="w-full bg-gray-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                <div id="bar-ec" class="bg-purple-500 h-full transition-all duration-500" style="width: 72%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Water Level -->
+                        <div class="bg-gray-900/80 p-4 rounded-xl border border-gray-800 text-center">
+                            <p class="text-xs text-gray-400 font-medium">Reservoir Level</p>
+                            <p id="sim-water" class="text-2xl font-extrabold text-teal-400 mt-2 font-mono">88%</p>
+                            <div class="w-full bg-gray-800 h-1.5 rounded-full mt-2 overflow-hidden">
+                                <div id="bar-water" class="bg-teal-500 h-full transition-all duration-500" style="width: 88%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sensor Adjustment Sliders (Simulation Controls) -->
+                    <div class="bg-gray-900/50 p-4 rounded-xl border border-gray-800/80 space-y-4">
+                        <p class="text-xs font-semibold text-gray-300 uppercase tracking-wider">Simulate Environmental Drift</p>
+                        
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs text-gray-400">
+                                <span>Adjust Soil Hydration</span>
+                                <span id="slider-val-moisture">42%</span>
+                            </div>
+                            <input type="range" id="input-moisture" min="10" max="90" value="42" class="w-full accent-brand-500 bg-gray-800 h-2 rounded-lg cursor-pointer">
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex justify-between text-xs text-gray-400">
+                                <span>Adjust Reservoir pH Level</span>
+                                <span id="slider-val-ph">6.2</span>
+                            </div>
+                            <input type="range" id="input-ph" min="4.0" max="8.5" step="0.1" value="6.2" class="w-full accent-blue-500 bg-gray-800 h-2 rounded-lg cursor-pointer">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manual Actuator Overrides & Status -->
+                <div class="lg:col-span-5 bg-cardbg p-6 sm:p-8 rounded-2xl border border-gray-800 flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between border-b border-gray-800 pb-4 mb-6">
+                            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                                <i class="fa-solid fa-sliders text-brand-400"></i> Manual Actuator Controls
+                            </h3>
+                            <span class="text-xs font-mono bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 px-2 py-0.5 rounded">Override Ready</span>
+                        </div>
+
+                        <div class="space-y-4">
+                            <!-- Main Irrigation Valve Switch -->
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-900/80 border border-gray-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">Main Water Solenoid</p>
+                                    <p class="text-xs text-gray-400">Zone 1 Supply Line</p>
+                                </div>
+                                <button id="btn-toggle-valve" onclick="toggleActuator('valve')" class="px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all bg-gray-800 text-gray-400 border border-gray-700">
+                                    CLOSED
+                                </button>
+                            </div>
+
+                            <!-- Peristaltic Nutrient Dosing Pump -->
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-900/80 border border-gray-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">Nutrient Pump (Mix A)</p>
+                                    <p class="text-xs text-gray-400">Peristaltic Micro-Dose</p>
+                                </div>
+                                <button id="btn-toggle-pump1" onclick="toggleActuator('pump1')" class="px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all bg-gray-800 text-gray-400 border border-gray-700">
+                                    OFF
+                                </button>
+                            </div>
+
+                            <!-- pH Adjustment Pump -->
+                            <div class="flex items-center justify-between p-4 rounded-xl bg-gray-900/80 border border-gray-800">
+                                <div>
+                                    <p class="text-sm font-semibold text-white">pH Stabilizer Pump</p>
+                                    <p class="text-xs text-gray-400">Acid/Base Dosing</p>
+                                </div>
+                                <button id="btn-toggle-pump2" onclick="toggleActuator('pump2')" class="px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all bg-gray-800 text-gray-400 border border-gray-700">
+                                    OFF
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Instant Automated Treatment Injection Button -->
+                    <div class="mt-8 pt-4 border-t border-gray-800">
+                        <button onclick="triggerAutoTreatment()" class="w-full bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white font-semibold py-3 px-4 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            <span>Trigger Auto-Treatment Cycle</span>
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer / Documentation & Download Links -->
+    <footer class="bg-darkbg border-t border-gray-800 py-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
+                <div class="space-y-4 md:col-span-1">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white">
+                            <i class="fa-solid fa-leaf"></i>
+                        </div>
+                        <span class="text-lg font-bold text-white">HydroPulse</span>
+                    </div>
+                    <p class="text-xs text-gray-400 leading-relaxed">
+                        Automating indoor botanical environments through open electronics and closed-loop liquid dynamics.
+                    </p>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-mono font-semibold text-gray-300 uppercase tracking-wider mb-4">Documentation</h4>
+                    <ul class="space-y-2 text-xs text-gray-400">
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">API Reference (REST)</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">MQTT Topic Schemas</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Calibration Protocols</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">PCB Gerber Files</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-mono font-semibold text-gray-300 uppercase tracking-wider mb-4">Resources</h4>
+                    <ul class="space-y-2 text-xs text-gray-400">
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Firmware Releases v2.4</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Docker Stack Image</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">3D Print CAD Models</a></li>
+                        <li><a href="#" class="hover:text-brand-400 transition-colors">Community Forum</a></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-xs font-mono font-semibold text-gray-300 uppercase tracking-wider mb-4">License & Open Source</h4>
+                    <p class="text-xs text-gray-400 leading-relaxed mb-3">
+                        Released under MIT License. Open for hardware modification and community redistribution.
+                    </p>
+                    <div class="flex space-x-3 text-gray-400">
+                        <a href="#" class="hover:text-white text-lg"><i class="fa-brands fa-github"></i></a>
+                        <a href="#" class="hover:text-white text-lg"><i class="fa-brands fa-discord"></i></a>
+                        <a href="#" class="hover:text-white text-lg"><i class="fa-brands fa-docker"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-800/80 pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500">
+                <p>&copy; 2026 HydroPulse Systems Inc. Open-Source Hardware Framework.</p>
+                <div class="flex space-x-4 mt-4 sm:mt-0">
+                    <a href="#" class="hover:text-gray-400">Privacy Policy</a>
+                    <a href="#" class="hover:text-gray-400">Terms of Service</a>
+                    <a href="#" class="hover:text-gray-400">Contact Support</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // --- Hardware Data Object ---
+        const hardwareSpecs = {
+            esp32: {
+                title: "ESP32 / NodeMCU Microcontroller",
+                badge: "Core Controller",
+                description: "Dual-core Tensilica LX6, operating at 240 MHz with built-in Wi-Fi and Bluetooth LE. Handles local sensor calculations, PWM pump control, and fast MQTT telemetry dispatch.",
+                specs: [
+                    "Operating Voltage: 3.3V System Logic",
+                    "Flash Memory: 4MB / 8MB SPI",
+                    "Interfaces: SPI, I2C, UART, 12-bit ADC",
+                    "Integrated Hardware Timers for PWM"
+                ]
+            },
+            peristaltic: {
+                title: "12V Micro Peristaltic Dosing Pumps",
+                badge: "Precision Treatment",
+                description: "Positive displacement pumps designed for accurate dosing of concentrated liquids, fertilizers, pesticides, and pH balancers without liquid contact with pump motors.",
+                specs: [
+                    "Flow Rate: 10ml/min to 90ml/min Adjustable",
+                    "Tubing Material: Food-Grade Silicone",
+                    "Dosing Resolution: Down to 0.5 mL",
+                    "Control Interface: MOSFET Switch Driver Relay"
+                ]
+            },
+            manifold: {
+                title: "Solenoid Fluid Delivery Manifold",
+                badge: "Multi-Zone Flow Control",
+                description: "12V DC normally-closed food-grade brass/nylon solenoid valves combined in a distribution manifold to direct fluid delivery precisely to configured zones.",
+                specs: [
+                    "Operating Pressure: 0.02 - 0.8 MPa",
+                    "Response Time: < 50ms Open / Close",
+                    "Relay Isolation: Optocoupler Protection",
+                    "Voltage: 12V DC / 350mA per channel"
+                ]
+            },
+            sensors: {
+                title: "Capacitive Moisture & pH/EC Probes",
+                badge: "Telemetry Acquisition",
+                description: "Corrosion-resistant capacitive sensors avoid electrolysis in soil. Industrial BNC industrial pH and Electrical Conductivity (EC) probes measure nutrient concentration.",
+                specs: [
+                    "Soil Sensor: Capacitive Analog (V1.2 / V2.0)",
+                    "pH Sensor Range: 0.00 - 14.00 pH (± 0.1 Accuracy)",
+                    "EC Probe: Industrial Platinum Electrode",
+                    "Galvanic Signal Isolator on Analog Lines"
+                ]
+            },
+            reservoir: {
+                title: "Fluid Reservoir & Stirring Assembly",
+                badge: "Liquid Storage & Prep",
+                description: "Polypropylene liquid reservoirs fitted with low-level float switches and continuous magnetic stirrers for complete homogenization before dosing.",
+                specs: [
+                    "Capacity: 20L Main Water / 1L Treatment Concentrates",
+                    "Mixer: 12V Brushless Magnetic Stirrer Bar",
+                    "Fluid Level: Dual Contact Float Switches",
+                    "Drainage: Manual Quick-Release Valves"
+                ]
+            }
+        };
+
+        // Render Hardware Component Details
+        function selectHardware(key) {
+            const data = hardwareSpecs[key];
+            if (!data) return;
+
+            // Update Nav Button Styles
+            document.querySelectorAll('.hw-btn').forEach(btn => {
+                btn.className = 'hw-btn w-full text-left p-3.5 rounded-xl border border-gray-800 hover:border-gray-700 bg-gray-900/50 text-gray-300 font-medium flex items-center justify-between transition-all';
+            });
+            const activeBtn = document.getElementById(`btn-${key}`);
+            if (activeBtn) {
+                activeBtn.className = 'hw-btn w-full text-left p-3.5 rounded-xl border border-brand-500/40 bg-brand-500/10 text-white font-medium flex items-center justify-between transition-all';
+            }
+
+            // Render Detail HTML
+            const detailContainer = document.getElementById('hardware-detail');
+            detailContainer.innerHTML = `
+                <div>
+                    <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-brand-500/10 border border-brand-500/30 text-brand-400 text-xs font-mono mb-3">
+                        ${data.badge}
+                    </div>
+                    <h4 class="text-2xl font-bold text-white">${data.title}</h4>
+                    <p class="text-gray-300 text-sm leading-relaxed mt-3">${data.description}</p>
+
+                    <div class="mt-6">
+                        <h5 class="text-xs font-mono font-semibold text-gray-400 uppercase tracking-wider mb-3">Technical Specifications</h5>
+                        <ul class="space-y-2">
+                            ${data.specs.map(spec => `
+                                <li class="flex items-center gap-2 text-sm text-gray-300">
+                                    <i class="fa-solid fa-check text-brand-400 text-xs"></i>
+                                    <span>${spec}</span>
+                                </li>
+                            `).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Software Setup Tabs Switcher
+        function setTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn px-6 py-3 font-semibold text-sm border-b-2 border-transparent text-gray-400 hover:text-white whitespace-nowrap flex items-center gap-2';
+            });
+
+            document.getElementById(`content-${tabName}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabName}`).className = 'tab-btn px-6 py-3 font-semibold text-sm border-b-2 border-brand-500 text-brand-400 whitespace-nowrap flex items-center gap-2';
+        }
+
+        // Copy Code to Clipboard
+        function copyCode(elementId) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            
+            // Fallback for document.execCommand
+            const textarea = document.createElement('textarea');
+            textarea.value = textToCopy;
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showToast('Snippet copied to clipboard!');
+            } catch (err) {
+                showToast('Failed to copy text.');
+            }
+            document.body.removeChild(textarea);
+        }
+
+        // Toast Notification System
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // --- Interactive Simulation State ---
+        let actuators = {
+            valve: false,
+            pump1: false,
+            pump2: false
+        };
+
+        function toggleActuator(type) {
+            actuators[type] = !actuators[type];
+            const btn = document.getElementById(`btn-toggle-${type}`);
+            
+            if (actuators[type]) {
+                btn.innerText = 'ACTIVE / ON';
+                btn.className = 'px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all bg-brand-500 text-white shadow-lg shadow-brand-500/20';
+                showToast(`Actuator [${type.toUpperCase()}] Activated!`);
+            } else {
+                btn.innerText = type === 'valve' ? 'CLOSED' : 'OFF';
+                btn.className = 'px-4 py-2 rounded-lg font-mono text-xs font-bold transition-all bg-gray-800 text-gray-400 border border-gray-700';
+            }
+        }
+
+        function triggerAutoTreatment() {
+            showToast("Initiating 10-second automatic dosing & irrigation sequence...");
+            
+            // Turn on actuators programmatically
+            if (!actuators.valve) toggleActuator('valve');
+            if (!actuators.pump1) toggleActuator('pump1');
+
+            // Set moisture boost
+            setTimeout(() => {
+                const moistureInput = document.getElementById('input-moisture');
+                moistureInput.value = Math.min(85, parseInt(moistureInput.value) + 25);
+                moistureInput.dispatchEvent(new Event('input'));
+            }, 1500);
+
+            // Reset after 5 seconds
+            setTimeout(() => {
+                if (actuators.valve) toggleActuator('valve');
+                if (actuators.pump1) toggleActuator('pump1');
+                showToast("Auto-Treatment sequence completed safely.");
+            }, 5000);
+        }
+
+        // Setup Event Listeners on DOM Load
+        window.onload = function() {
+            // Default Hardware Select
+            selectHardware('esp32');
+
+            // Mobile menu toggle
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+
+            // Moisture Slider Binding
+            const inputMoisture = document.getElementById('input-moisture');
+            inputMoisture.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.getElementById('sim-moisture').innerText = `${val}%`;
+                document.getElementById('bar-moisture').style.width = `${val}%`;
+                document.getElementById('slider-val-moisture').innerText = `${val}%`;
+            });
+
+            // pH Slider Binding
+            const inputPh = document.getElementById('input-ph');
+            inputPh.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value).toFixed(1);
+                document.getElementById('sim-ph').innerText = val;
+                document.getElementById('slider-val-ph').innerText = val;
+                
+                // Map pH (4-8.5) to bar width %
+                const percent = Math.min(100, Math.max(0, ((val - 4) / 4.5) * 100));
+                document.getElementById('bar-ph').style.width = `${percent}%`;
+            });
+        };
+    </script>
+</body>
+</html>
